@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment;
 import com.example.bookbridge.data.AppDatabase;
 import com.example.bookbridge.data.User;
 import com.example.bookbridge.data.UserDao;
+import com.example.bookbridge.utils.SessionManager;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -59,10 +60,7 @@ public class LoginFragment extends Fragment {
         boolean isValid = true;
 
         // Validate username/email
-        String usernameOrEmail = etUsernameOrEmail != null && etUsernameOrEmail.getText() != null 
-                ? etUsernameOrEmail.getText().toString().trim() 
-                : "";
-        if (usernameOrEmail.isEmpty()) {
+        if (etUsernameOrEmail.getText() == null || etUsernameOrEmail.getText().toString().trim().isEmpty()) {
             tilUsernameOrEmail.setError(getString(R.string.username_required));
             isValid = false;
         } else {
@@ -70,10 +68,7 @@ public class LoginFragment extends Fragment {
         }
 
         // Validate password
-        String password = etPassword != null && etPassword.getText() != null 
-                ? etPassword.getText().toString().trim() 
-                : "";
-        if (password.isEmpty()) {
+        if (etPassword.getText() == null || etPassword.getText().toString().trim().isEmpty()) {
             tilPassword.setError(getString(R.string.password_required));
             isValid = false;
         } else {
@@ -102,6 +97,10 @@ public class LoginFragment extends Fragment {
             // Update UI on the main thread
             requireActivity().runOnUiThread(() -> {
                 if (user != null) {
+                    // Save user session
+                    SessionManager sessionManager = SessionManager.getInstance(requireContext());
+                    sessionManager.createLoginSession(user);
+                    
                     Toast.makeText(requireContext(), R.string.login_success, Toast.LENGTH_SHORT).show();
                     // Navigate to main activity
                     Intent intent = new Intent(requireContext(), MainActivity.class);

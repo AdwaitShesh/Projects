@@ -13,6 +13,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.bookbridge.R;
+import com.example.bookbridge.data.User;
+import com.example.bookbridge.utils.SessionManager;
 import com.google.android.material.snackbar.Snackbar;
 
 public class ProfileFragment extends Fragment {
@@ -22,11 +24,15 @@ public class ProfileFragment extends Fragment {
     private EditText etPhone;
     private EditText etAddress;
     private Button btnSave;
+    private SessionManager sessionManager;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
+        
+        // Initialize SessionManager
+        sessionManager = SessionManager.getInstance(requireContext());
         
         // Initialize views
         initViews(view);
@@ -49,19 +55,26 @@ public class ProfileFragment extends Fragment {
     }
 
     private void loadUserData() {
-        // TODO: In a real app, fetch user data from database or shared preferences
-        // For demo purposes, populate with dummy data
-        etName.setText("John Doe");
-        etEmail.setText("john.doe@example.com");
-        etPhone.setText("+1 234 567 8900");
-        etAddress.setText("123 Book Street, Library City, 12345");
+        // Get user data from SessionManager
+        if (sessionManager.isLoggedIn()) {
+            User user = sessionManager.getUser();
+            if (user != null) {
+                etName.setText(user.getUsername());
+                etEmail.setText(user.getEmail());
+                etPhone.setText(user.getMobileNo());
+                etAddress.setText(sessionManager.getUserAddress());
+            }
+        } else {
+            // User not logged in, which shouldn't happen in normal flow
+            Toast.makeText(getContext(), "Error: User not logged in", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void setupListeners() {
         btnSave.setOnClickListener(v -> {
             // Validate inputs
             if (validateInputs()) {
-                // TODO: In a real app, save data to database or shared preferences
+                // Save updated user data
                 saveUserData();
                 Snackbar.make(v, "Profile updated successfully", Snackbar.LENGTH_SHORT).show();
             }
@@ -103,13 +116,16 @@ public class ProfileFragment extends Fragment {
     }
 
     private void saveUserData() {
-        // In a real app, this would save to a database or shared preferences
+        // Get updated data from inputs
         String name = etName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String phone = etPhone.getText().toString().trim();
         String address = etAddress.getText().toString().trim();
         
-        // For demo, just show a toast
+        // Save to SessionManager
+        sessionManager.updateUserDetails(name, email, phone, address);
+        
+        // Show success message
         Toast.makeText(getContext(), "Profile saved for " + name, Toast.LENGTH_SHORT).show();
     }
 } 

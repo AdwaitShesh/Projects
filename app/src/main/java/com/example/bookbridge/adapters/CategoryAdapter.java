@@ -6,12 +6,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.bookbridge.CategoryActivity;
 import com.example.bookbridge.R;
 import com.example.bookbridge.models.Category;
 
@@ -41,8 +41,8 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
         holder.ivCategoryIcon.setImageResource(category.getIconResource());
 
         holder.cardCategory.setOnClickListener(v -> {
-            Toast.makeText(context, category.getName() + " books coming soon!", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to category details screen
+            // Navigate to CategoryActivity with the selected category
+            CategoryActivity.start(context, category.getName());
         });
     }
 

@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -21,8 +22,11 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.example.bookbridge.models.Book;
 import com.example.bookbridge.utils.BookManager;
+import com.example.bookbridge.utils.SessionManager;
+import com.example.bookbridge.data.User;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Random;
 
 public class SellBookActivity extends AppCompatActivity {
@@ -36,7 +40,6 @@ public class SellBookActivity extends AppCompatActivity {
     private EditText etBookTitle, etAuthor, etPrice, etLocation, etSellerName;
     private RadioGroup rgCondition, rgCategory;
     private RadioButton rbLikeNew, rbGood, rbFair;
-    private RadioButton rbEngineering, rbComputerScience, rbElectronics;
     private Button btnListBook;
 
     // Selected image
@@ -71,13 +74,55 @@ public class SellBookActivity extends AppCompatActivity {
         etSellerName = findViewById(R.id.et_seller_name);
         rgCondition = findViewById(R.id.rg_condition);
         rgCategory = findViewById(R.id.rg_category);
+        
+        // Update radio buttons to match our category constants
         rbLikeNew = findViewById(R.id.rb_like_new);
         rbGood = findViewById(R.id.rb_good);
         rbFair = findViewById(R.id.rb_fair);
-        rbEngineering = findViewById(R.id.rb_engineering);
-        rbComputerScience = findViewById(R.id.rb_computer_science);
-        rbElectronics = findViewById(R.id.rb_electronics);
+        
+        // Set up category radio buttons dynamically using BookManager categories
+        // (Skip the "All" category which is only for filtering)
+        rgCategory.removeAllViews();
+        List<String> categories = BookManager.getAllCategories();
+        
+        for (int i = 1; i < categories.size(); i++) { // Start from 1 to skip "All"
+            String category = categories.get(i);
+            RadioButton rb = new RadioButton(this);
+            rb.setId(View.generateViewId());
+            rb.setText(category);
+            rb.setTag(category); // Store category name as tag for retrieval
+            
+            // Apply the same style as other radio buttons
+            rb.setBackground(getResources().getDrawable(R.drawable.radio_selector));
+            rb.setTextColor(getResources().getColorStateList(R.drawable.radio_text_selector));
+            rb.setButtonDrawable(null);
+            rb.setGravity(Gravity.CENTER);
+            rb.setPadding(36, 36, 36, 36);
+            
+            // Set the first category as checked by default
+            if (i == 1) {
+                rb.setChecked(true);
+            }
+            
+            // Set layout parameters
+            RadioGroup.LayoutParams params = new RadioGroup.LayoutParams(
+                    0, RadioGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+            params.setMargins(i > 1 ? 16 : 0, 0, 0, 0);
+            rb.setLayoutParams(params);
+            
+            rgCategory.addView(rb);
+        }
+        
         btnListBook = findViewById(R.id.btn_list_book);
+
+        // Pre-fill seller name with logged-in user's name
+        SessionManager sessionManager = SessionManager.getInstance(this);
+        if (sessionManager.isLoggedIn()) {
+            User user = sessionManager.getUser();
+            if (user != null) {
+                etSellerName.setText(user.getUsername());
+            }
+        }
     }
 
     private void setupListeners() {
@@ -133,14 +178,13 @@ public class SellBookActivity extends AppCompatActivity {
         }
 
         // Get category
-        String category;
-        int checkedCategoryId = rgCategory.getCheckedRadioButtonId();
-        if (checkedCategoryId == R.id.rb_engineering) {
-            category = "Engineering";
-        } else if (checkedCategoryId == R.id.rb_computer_science) {
-            category = "Computer Science";
-        } else {
-            category = "Electronics";
+        String category = BookManager.CATEGORY_CSE; // Default to CSE
+        int selectedCategoryId = rgCategory.getCheckedRadioButtonId();
+        if (selectedCategoryId != -1) {
+            RadioButton selectedRadioButton = findViewById(selectedCategoryId);
+            if (selectedRadioButton != null && selectedRadioButton.getTag() != null) {
+                category = selectedRadioButton.getTag().toString();
+            }
         }
 
         // Get resource ID for a random book image if no image was uploaded
@@ -171,7 +215,7 @@ public class SellBookActivity extends AppCompatActivity {
                 ", Category: " + category;
 
         // Create a new Book object with a temporary ID (BookManager will assign the final ID)
-        Book newBook = new Book(0, title, author, price, description, resourceId, false);
+        Book newBook = new Book(0, title, author, price, description, resourceId, false, category);
         
         // Add the book to the BookManager
         BookManager.addBook(newBook);

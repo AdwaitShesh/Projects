@@ -10,6 +10,7 @@ public class Book implements Serializable {
     private String description;
     private int imageResource;
     private boolean isWishlisted;
+    private String category;
 
     public Book(int id, String title, String author, double price, String description, int imageResource, boolean isWishlisted) {
         this.id = id;
@@ -19,6 +20,18 @@ public class Book implements Serializable {
         this.description = description;
         this.imageResource = imageResource;
         this.isWishlisted = isWishlisted;
+        this.category = "";
+    }
+
+    public Book(int id, String title, String author, double price, String description, int imageResource, boolean isWishlisted, String category) {
+        this.id = id;
+        this.title = title;
+        this.author = author;
+        this.price = price;
+        this.description = description;
+        this.imageResource = imageResource;
+        this.isWishlisted = isWishlisted;
+        this.category = category;
     }
 
     // Getters and Setters
@@ -76,5 +89,13 @@ public class Book implements Serializable {
 
     public void setWishlisted(boolean wishlisted) {
         isWishlisted = wishlisted;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 } 

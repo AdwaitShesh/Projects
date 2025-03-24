@@ -22,6 +22,7 @@ import com.example.bookbridge.models.Book;
 import com.example.bookbridge.models.Review;
 import com.example.bookbridge.utils.BookManager;
 import com.example.bookbridge.utils.CartManager;
+import com.example.bookbridge.utils.SessionManager;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -50,6 +51,17 @@ public class BookDetailsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Check if user is logged in
+        SessionManager sessionManager = SessionManager.getInstance(this);
+        if (!sessionManager.isLoggedIn()) {
+            // Redirect to AuthActivity
+            Intent intent = new Intent(this, AuthActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+        
         setContentView(R.layout.activity_book_details);
 
         // Get the book ID from intent
@@ -204,9 +216,15 @@ public class BookDetailsActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        // Wishlist button
+        // Set up wishlist button
         ivWishlist.setOnClickListener(v -> {
             book.setWishlisted(!book.isWishlisted());
+            // Update the same book in BookManager
+            Book bookInManager = BookManager.getBookById(book.getId());
+            if (bookInManager != null) {
+                bookInManager.setWishlisted(book.isWishlisted());
+            }
+            // Update UI
             if (book.isWishlisted()) {
                 ivWishlist.setImageResource(R.drawable.ic_favorite);
                 Toast.makeText(this, "Added to wishlist", Toast.LENGTH_SHORT).show();
@@ -214,9 +232,13 @@ public class BookDetailsActivity extends AppCompatActivity {
                 ivWishlist.setImageResource(R.drawable.ic_favorite_border);
                 Toast.makeText(this, "Removed from wishlist", Toast.LENGTH_SHORT).show();
             }
+            // Update wishlist badge in MainActivity
+            if (getParent() instanceof MainActivity) {
+                ((MainActivity) getParent()).onWishlistUpdated();
+            }
         });
 
-        // Share button
+        // Set up share button
         ivShare.setOnClickListener(v -> {
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
             shareIntent.setType("text/plain");

@@ -23,7 +23,9 @@ import com.example.bookbridge.adapters.FeaturedBooksAdapter;
 import com.example.bookbridge.adapters.RecentBooksAdapter;
 import com.example.bookbridge.models.Book;
 import com.example.bookbridge.models.Category;
+import com.example.bookbridge.models.User;
 import com.example.bookbridge.utils.BookManager;
+import com.example.bookbridge.utils.SessionManager;
 import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -48,9 +50,23 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private FeaturedBooksAdapter featuredBooksAdapter;
     private RecentBooksAdapter recentBooksAdapter;
 
+    private static final int WISHLIST_REQUEST_CODE = 1001;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Check if user is logged in
+        SessionManager sessionManager = SessionManager.getInstance(this);
+        if (!sessionManager.isLoggedIn()) {
+            // Redirect to AuthActivity
+            Intent intent = new Intent(this, AuthActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+        
+        // Continue with normal flow if user is logged in
         setContentView(R.layout.activity_main);
 
         // Initialize views
@@ -111,6 +127,28 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // TODO: Get actual user data from database or shared preferences
         tvUserName.setText("Engineering Student");
         tvUserEmail.setText("student@example.com");
+        
+        // Update navigation header with user information
+        updateNavigationHeader();
+    }
+
+    private void updateNavigationHeader() {
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        View headerView = navigationView.getHeaderView(0);
+        
+        // Get references to the views in the header
+        TextView tvUsername = headerView.findViewById(R.id.tv_nav_username);
+        TextView tvEmail = headerView.findViewById(R.id.tv_nav_email);
+        
+        // Get user info from SessionManager
+        SessionManager sessionManager = SessionManager.getInstance(this);
+        if (sessionManager.isLoggedIn()) {
+            User user = sessionManager.getUser();
+            if (user != null) {
+                tvUsername.setText(user.getUsername());
+                tvEmail.setText(user.getEmail());
+            }
+        }
     }
 
     private void setupBottomNavigation() {
@@ -131,7 +169,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 startActivity(intent);
                 return true;
             } else if (itemId == R.id.nav_wishlist) {
-                Toast.makeText(this, "Wishlist coming soon!", Toast.LENGTH_SHORT).show();
+                // Navigate to wishlist for result
+                Intent intent = new Intent(MainActivity.this, WishlistActivity.class);
+                startActivityForResult(intent, WISHLIST_REQUEST_CODE);
                 return true;
             } else if (itemId == R.id.nav_profile) {
                 // Navigate to profile
@@ -143,13 +183,29 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return false;
         });
         
-        // Add badge to wishlist icon
-        BadgeDrawable wishlistBadge = bottomNavigationView.getOrCreateBadge(R.id.nav_wishlist);
-        wishlistBadge.setVisible(true);
-        wishlistBadge.setNumber(3); // Example number of wishlist items
-        
-        // Add badge to cart icon
+        // Add badges to navigation items
+        updateWishlistBadge();
         updateCartBadge();
+    }
+    
+    // Method to update wishlist badge
+    private void updateWishlistBadge() {
+        BadgeDrawable wishlistBadge = bottomNavigationView.getOrCreateBadge(R.id.nav_wishlist);
+        int wishlistCount = BookManager.getWishlistCount();
+        if (wishlistCount > 0) {
+            wishlistBadge.setVisible(true);
+            wishlistBadge.setNumber(wishlistCount);
+            // Make sure to use the unfilled icon when count is 0
+            Menu menu = bottomNavigationView.getMenu();
+            MenuItem wishlistItem = menu.findItem(R.id.nav_wishlist);
+            wishlistItem.setIcon(R.drawable.ic_favorite);
+        } else {
+            wishlistBadge.setVisible(false);
+            // Reset to outline icon when no items in wishlist
+            Menu menu = bottomNavigationView.getMenu();
+            MenuItem wishlistItem = menu.findItem(R.id.nav_wishlist);
+            wishlistItem.setIcon(R.drawable.ic_favorite_border);
+        }
     }
     
     // Method to update cart badge
@@ -167,7 +223,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     protected void onResume() {
         super.onResume();
-        // Update cart badge every time MainActivity becomes visible
+        // Update badges every time MainActivity becomes visible
+        updateWishlistBadge();
         updateCartBadge();
         
         // Reload recent books when returning to the activity to show any newly added books
@@ -177,26 +234,51 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void loadCategories() {
         List<Category> categories = new ArrayList<>();
         
-        // Add example categories
-        categories.add(new Category("CSE", R.drawable.ic_category_cs));
-        categories.add(new Category("ECE", R.drawable.ic_category_ec));
-        categories.add(new Category("Mech", R.drawable.ic_category_mech));
-        categories.add(new Category("Civil", R.drawable.ic_category_civil));
-        categories.add(new Category("IT", R.drawable.ic_category_it));
-        categories.add(new Category("EEE", R.drawable.ic_category_eee));
+        // Add "All" category
+        categories.add(new Category(BookManager.CATEGORY_ALL, R.drawable.ic_category_all));
         
-        categoryAdapter = new CategoryAdapter(this, categories);
-        rvCategories.setAdapter(categoryAdapter);
+        // Add other categories
+        categories.add(new Category(BookManager.CATEGORY_CSE, R.drawable.ic_category_cs));
+        categories.add(new Category(BookManager.CATEGORY_ECE, R.drawable.ic_category_ec));
+        categories.add(new Category(BookManager.CATEGORY_MECH, R.drawable.ic_category_mech));
+        categories.add(new Category(BookManager.CATEGORY_CIVIL, R.drawable.ic_category_civil));
+        categories.add(new Category(BookManager.CATEGORY_IT, R.drawable.ic_category_it));
+        categories.add(new Category(BookManager.CATEGORY_EEE, R.drawable.ic_category_eee));
+        
+        // Show empty message if no categories
+        TextView tvEmptyCategories = findViewById(R.id.tv_empty_categories);
+        if (categories.isEmpty()) {
+            rvCategories.setVisibility(View.GONE);
+            tvEmptyCategories.setVisibility(View.VISIBLE);
+        } else {
+            rvCategories.setVisibility(View.VISIBLE);
+            tvEmptyCategories.setVisibility(View.GONE);
+            categoryAdapter = new CategoryAdapter(this, categories);
+            rvCategories.setAdapter(categoryAdapter);
+        }
+        
+        // Set up "View All" click listeners
+        View featuredViewAll = findViewById(R.id.tv_featured_view_all);
+        featuredViewAll.setOnClickListener(v -> {
+            // Navigate to CategoryActivity showing all books
+            CategoryActivity.start(this, BookManager.CATEGORY_ALL);
+        });
+        
+        View recentViewAll = findViewById(R.id.tv_recent_view_all);
+        recentViewAll.setOnClickListener(v -> {
+            // Navigate to CategoryActivity showing all books
+            CategoryActivity.start(this, BookManager.CATEGORY_ALL);
+        });
     }
 
     private void loadFeaturedBooks() {
         List<Book> featuredBooks = new ArrayList<>();
         
-        // Add example featured books
-        featuredBooks.add(new Book(1, "Data Structures & Algorithms", "Robert Lafore", 450, "Computer Science textbook covering all fundamental algorithms and data structures", R.drawable.book_dsa, true));
-        featuredBooks.add(new Book(2, "Computer Networks", "Andrew S. Tanenbaum", 380, "Complete reference for computer networking concepts", R.drawable.book_networks, true));
+        // Add example featured books (all with wishlist set to false initially)
+        featuredBooks.add(new Book(1, "Data Structures & Algorithms", "Robert Lafore", 450, "Computer Science textbook covering all fundamental algorithms and data structures", R.drawable.book_dsa, false));
+        featuredBooks.add(new Book(2, "Computer Networks", "Andrew S. Tanenbaum", 380, "Complete reference for computer networking concepts", R.drawable.book_networks, false));
         featuredBooks.add(new Book(3, "Digital Logic Design", "Morris Mano", 290, "Comprehensive guide to digital logic and computer design", R.drawable.book_digital_logic, false));
-        featuredBooks.add(new Book(4, "Operating Systems", "Galvin", 320, "Essential concepts of modern operating systems", R.drawable.book_os, true));
+        featuredBooks.add(new Book(4, "Operating Systems", "Galvin", 320, "Essential concepts of modern operating systems", R.drawable.book_os, false));
         
         featuredBooksAdapter = new FeaturedBooksAdapter(this, featuredBooks);
         rvFeaturedBooks.setAdapter(featuredBooksAdapter);
@@ -242,14 +324,22 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (id == R.id.nav_drawer_my_listings) {
             Toast.makeText(this, "My Listings coming soon!", Toast.LENGTH_SHORT).show();
         } else if (id == R.id.nav_drawer_wishlist) {
-            Toast.makeText(this, "Wishlist coming soon!", Toast.LENGTH_SHORT).show();
+            // Navigate to wishlist for result
+            Intent intent = new Intent(this, WishlistActivity.class);
+            startActivityForResult(intent, WISHLIST_REQUEST_CODE);
         } else if (id == R.id.nav_drawer_settings) {
             Toast.makeText(this, "Settings coming soon!", Toast.LENGTH_SHORT).show();
         } else if (id == R.id.nav_drawer_help) {
             Toast.makeText(this, "Help coming soon!", Toast.LENGTH_SHORT).show();
         } else if (id == R.id.nav_drawer_logout) {
-            // Logout functionality
+            // Logout and clear session
+            SessionManager sessionManager = SessionManager.getInstance(this);
+            sessionManager.logout();
+            
+            // Go to Auth activity
             Intent intent = new Intent(this, AuthActivity.class);
+            // Clear all previous activities
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
         }
@@ -264,6 +354,30 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             drawerLayout.closeDrawer(GravityCompat.START);
         } else {
             super.onBackPressed();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        if (requestCode == WISHLIST_REQUEST_CODE) {
+            // Update wishlist badge when returning from WishlistActivity
+            updateWishlistBadge();
+        }
+    }
+    
+    public void onWishlistUpdated() {
+        // Update bottom navigation badge
+        updateWishlistBadge();
+        
+        // Refresh adapters to update wishlist icons in all book listings
+        if (featuredBooksAdapter != null) {
+            featuredBooksAdapter.notifyDataSetChanged();
+        }
+        
+        if (recentBooksAdapter != null) {
+            recentBooksAdapter.notifyDataSetChanged();
         }
     }
 }

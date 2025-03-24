@@ -21,6 +21,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import androidx.appcompat.widget.Toolbar;
+import com.example.bookbridge.utils.SessionManager;
 
 public class ProfileActivity extends AppCompatActivity {
 
@@ -78,8 +79,14 @@ public class ProfileActivity extends AppCompatActivity {
 
         // Set up logout button
         findViewById(R.id.btn_logout).setOnClickListener(v -> {
-            // Log out and go to Auth
+            // Log out and clear session
+            SessionManager sessionManager = SessionManager.getInstance(this);
+            sessionManager.logout();
+            
+            // Go to Auth activity
             Intent intent = new Intent(ProfileActivity.this, AuthActivity.class);
+            // Clear all previous activities
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
         });

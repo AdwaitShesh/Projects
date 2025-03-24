@@ -15,6 +15,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.example.bookbridge.data.AppDatabase;
 import com.example.bookbridge.data.User;
 import com.example.bookbridge.data.UserDao;
+import com.example.bookbridge.utils.SessionManager;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -160,8 +161,17 @@ public class RegisterFragment extends Fragment {
                     User user = new User(username, email, password, mobileNo);
                     userDao.insert(user);
                     
+                    // Get the inserted user with the ID
+                    User insertedUser = userDao.getUserByEmailOrUsername(email, username);
+                    
                     // Update UI on main thread
                     requireActivity().runOnUiThread(() -> {
+                        // Save user session
+                        if (insertedUser != null) {
+                            SessionManager sessionManager = SessionManager.getInstance(requireContext());
+                            sessionManager.createLoginSession(insertedUser);
+                        }
+                        
                         Toast.makeText(requireContext(), R.string.register_success, Toast.LENGTH_SHORT).show();
                         // Navigate to main activity
                         Intent intent = new Intent(requireContext(), MainActivity.class);

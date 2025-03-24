@@ -19,6 +19,8 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.example.bookbridge.models.Book;
 import com.example.bookbridge.utils.BookManager;
+import com.example.bookbridge.utils.SessionManager;
+import com.example.bookbridge.data.User;
 
 import java.text.DecimalFormat;
 import java.util.Locale;
@@ -45,6 +47,17 @@ public class CheckoutActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Check if user is logged in
+        SessionManager sessionManager = SessionManager.getInstance(this);
+        if (!sessionManager.isLoggedIn()) {
+            // Redirect to AuthActivity
+            Intent intent = new Intent(this, AuthActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+        
         setContentView(R.layout.activity_checkout);
 
         // Get data from intent
@@ -66,6 +79,9 @@ public class CheckoutActivity extends AppCompatActivity {
 
         // Initialize views
         initViews();
+        
+        // Pre-fill user information from SessionManager
+        prefillUserInfo();
         
         // Setup bank spinner
         setupSpinner();
@@ -268,5 +284,22 @@ public class CheckoutActivity extends AppCompatActivity {
         }
 
         return isValid;
+    }
+
+    private void prefillUserInfo() {
+        SessionManager sessionManager = SessionManager.getInstance(this);
+        if (sessionManager.isLoggedIn()) {
+            User user = sessionManager.getUser();
+            if (user != null) {
+                etFullName.setText(user.getUsername());
+                etPhone.setText(user.getMobileNo());
+                
+                // Pre-fill address if available
+                String userAddress = sessionManager.getUserAddress();
+                if (!TextUtils.isEmpty(userAddress)) {
+                    etAddress.setText(userAddress);
+                }
+            }
+        }
     }
 } 

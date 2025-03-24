@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.bookbridge.adapters.CartAdapter;
 import com.example.bookbridge.models.Book;
 import com.example.bookbridge.utils.CartManager;
+import com.example.bookbridge.utils.SessionManager;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -34,6 +35,17 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.CartI
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Check if user is logged in
+        SessionManager sessionManager = SessionManager.getInstance(this);
+        if (!sessionManager.isLoggedIn()) {
+            // Redirect to AuthActivity
+            Intent intent = new Intent(this, AuthActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+        
         setContentView(R.layout.activity_cart);
 
         // Set up toolbar

@@ -23,34 +23,35 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class FeaturedBooksAdapter extends RecyclerView.Adapter<FeaturedBooksAdapter.FeaturedBookViewHolder> {
+public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder> {
 
     private Context context;
     private List<Book> books;
 
-    public FeaturedBooksAdapter(Context context, List<Book> books) {
+    public BookAdapter(Context context) {
         this.context = context;
-        this.books = new ArrayList<>(books != null ? books : new ArrayList<>());
+        this.books = new ArrayList<>();
     }
 
     @NonNull
     @Override
-    public FeaturedBookViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.item_featured_book, parent, false);
-        return new FeaturedBookViewHolder(view);
+    public BookViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(context).inflate(R.layout.item_book, parent, false);
+        return new BookViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull FeaturedBookViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull BookViewHolder holder, int position) {
         Book book = books.get(position);
         holder.tvBookTitle.setText(book.getTitle());
         holder.tvBookAuthor.setText(book.getAuthor());
         holder.tvBookPrice.setText(String.format(Locale.getDefault(), "₹%.2f", book.getPrice()));
         holder.ivBookCover.setImageResource(book.getImageResource());
         
-        // Get fresh state from BookManager
+        // Always get fresh state from BookManager to ensure consistency
         Book bookInManager = BookManager.getBookById(book.getId());
         if (bookInManager != null) {
+            // Update the local book object with the latest wishlist state
             book.setWishlisted(bookInManager.isWishlisted());
         }
         
@@ -97,15 +98,45 @@ public class FeaturedBooksAdapter extends RecyclerView.Adapter<FeaturedBooksAdap
 
     @Override
     public int getItemCount() {
-        return books != null ? books.size() : 0;
+        return books.size();
     }
     
-    public void updateBooks(List<Book> newBooks) {
-        this.books = new ArrayList<>(newBooks != null ? newBooks : new ArrayList<>());
+    public void setBooks(List<Book> books) {
+        this.books = new ArrayList<>(books);
         notifyDataSetChanged();
     }
 
-    static class FeaturedBookViewHolder extends RecyclerView.ViewHolder {
+    public void refreshBooks() {
+        // Update all book wishlist states from the BookManager
+        for (Book book : books) {
+            Book bookInManager = BookManager.getBookById(book.getId());
+            if (bookInManager != null) {
+                book.setWishlisted(bookInManager.isWishlisted());
+            }
+        }
+        notifyDataSetChanged();
+    }
+    
+    // This method can be called when the activity resumes
+    public void syncWishlistState() {
+        boolean dataChanged = false;
+        
+        // Check if any book's wishlist state needs updating
+        for (Book book : books) {
+            Book bookInManager = BookManager.getBookById(book.getId());
+            if (bookInManager != null && book.isWishlisted() != bookInManager.isWishlisted()) {
+                book.setWishlisted(bookInManager.isWishlisted());
+                dataChanged = true;
+            }
+        }
+        
+        // Only update the UI if needed
+        if (dataChanged) {
+            notifyDataSetChanged();
+        }
+    }
+
+    static class BookViewHolder extends RecyclerView.ViewHolder {
         CardView cardBook;
         ImageView ivBookCover;
         ImageView ivWishlist;
@@ -113,7 +144,7 @@ public class FeaturedBooksAdapter extends RecyclerView.Adapter<FeaturedBooksAdap
         TextView tvBookAuthor;
         TextView tvBookPrice;
 
-        public FeaturedBookViewHolder(@NonNull View itemView) {
+        public BookViewHolder(@NonNull View itemView) {
             super(itemView);
             cardBook = itemView.findViewById(R.id.card_book);
             ivBookCover = itemView.findViewById(R.id.iv_book_cover);
