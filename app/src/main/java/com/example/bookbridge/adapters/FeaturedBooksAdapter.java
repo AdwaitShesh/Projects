@@ -1,6 +1,7 @@
 package com.example.bookbridge.adapters;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,11 +14,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.bookbridge.BookDetailsActivity;
 import com.example.bookbridge.MainActivity;
 import com.example.bookbridge.R;
 import com.example.bookbridge.models.Book;
 import com.example.bookbridge.utils.BookManager;
+import com.example.bookbridge.utils.ImageUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +51,9 @@ public class FeaturedBooksAdapter extends RecyclerView.Adapter<FeaturedBooksAdap
         holder.tvBookTitle.setText(book.getTitle());
         holder.tvBookAuthor.setText(book.getAuthor());
         holder.tvBookPrice.setText(String.format(Locale.getDefault(), "₹%.2f", book.getPrice()));
-        holder.ivBookCover.setImageResource(book.getImageResource());
+        
+        // Load image using our utility class
+        ImageUtils.loadBookCover(context, holder.ivBookCover, book);
         
         // Get fresh state from BookManager
         Book bookInManager = BookManager.getBookById(book.getId());
@@ -66,38 +73,32 @@ public class FeaturedBooksAdapter extends RecyclerView.Adapter<FeaturedBooksAdap
         });
 
         holder.ivWishlist.setOnClickListener(v -> {
+            // Toggle wishlist state
             book.setWishlisted(!book.isWishlisted());
             
-            // Update the same book in BookManager
-            Book updatedBook = BookManager.getBookById(book.getId());
-            if (updatedBook != null) {
-                updatedBook.setWishlisted(book.isWishlisted());
-            }
-            
-            // Update wishlist icon immediately
+            // Update icon
             updateWishlistIcon(holder.ivWishlist, book.isWishlisted());
             
-            // Show appropriate toast message
-            if (book.isWishlisted()) {
-                Toast.makeText(context, "Added to wishlist", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(context, "Removed from wishlist", Toast.LENGTH_SHORT).show();
+            // Update the book in the manager too
+            Book managerBook = BookManager.getBookById(book.getId());
+            if (managerBook != null) {
+                managerBook.setWishlisted(book.isWishlisted());
             }
             
-            // Update wishlist badge in MainActivity
-            if (context instanceof MainActivity) {
-                ((MainActivity) context).onWishlistUpdated();
-            }
+            // Show toast
+            Toast.makeText(context, book.isWishlisted() ? 
+                    "Added to wishlist" : "Removed from wishlist", Toast.LENGTH_SHORT).show();
         });
     }
-    
-    private void updateWishlistIcon(ImageView imageView, boolean isWishlisted) {
-        imageView.setImageResource(isWishlisted ? R.drawable.ic_favorite : R.drawable.ic_favorite_border);
+
+    private void updateWishlistIcon(ImageView ivWishlist, boolean isWishlisted) {
+        ivWishlist.setImageResource(isWishlisted ? 
+                R.drawable.ic_favorite : R.drawable.ic_favorite_border);
     }
 
     @Override
     public int getItemCount() {
-        return books != null ? books.size() : 0;
+        return books.size();
     }
     
     public void updateBooks(List<Book> newBooks) {

@@ -22,6 +22,7 @@ import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import androidx.appcompat.widget.Toolbar;
 import com.example.bookbridge.utils.SessionManager;
+import com.example.bookbridge.utils.BottomNavManager;
 
 public class ProfileActivity extends AppCompatActivity {
 
@@ -157,27 +158,9 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void setupBottomNavigation() {
-        bottomNavigationView.setSelectedItemId(R.id.nav_profile);
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            
-            if (itemId == R.id.nav_home) {
-                startActivity(new Intent(this, MainActivity.class));
-                return true;
-            } else if (itemId == R.id.nav_search) {
-                return true;
-            } else if (itemId == R.id.nav_cart) {
-                startActivity(new Intent(this, CartActivity.class));
-                return true;
-            } else if (itemId == R.id.nav_wishlist) {
-                return true;
-            } else if (itemId == R.id.nav_profile) {
-                // Already on profile
-                return true;
-            }
-            
-            return false;
-        });
+        // Use the BottomNavManager utility class to setup bottom navigation
+        BottomNavManager.setupBottomNavigation(
+                this, bottomNavigationView, R.id.nav_profile);
     }
 
     private static class ProfilePagerAdapter extends FragmentStateAdapter {

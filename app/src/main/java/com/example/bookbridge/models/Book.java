@@ -8,7 +8,8 @@ public class Book implements Serializable {
     private String author;
     private double price;
     private String description;
-    private int imageResource;
+    private int imageResource; // For drawable resources
+    private String imageUrl; // For real image URLs
     private boolean isWishlisted;
     private String category;
 
@@ -19,6 +20,7 @@ public class Book implements Serializable {
         this.price = price;
         this.description = description;
         this.imageResource = imageResource;
+        this.imageUrl = null; // No URL for this constructor
         this.isWishlisted = isWishlisted;
         this.category = "";
     }
@@ -30,6 +32,19 @@ public class Book implements Serializable {
         this.price = price;
         this.description = description;
         this.imageResource = imageResource;
+        this.imageUrl = null; // No URL for this constructor
+        this.isWishlisted = isWishlisted;
+        this.category = category;
+    }
+    
+    public Book(int id, String title, String author, double price, String description, String imageUrl, boolean isWishlisted, String category) {
+        this.id = id;
+        this.title = title;
+        this.author = author;
+        this.price = price;
+        this.description = description;
+        this.imageResource = 0; // No resource ID for this constructor
+        this.imageUrl = imageUrl;
         this.isWishlisted = isWishlisted;
         this.category = category;
     }
@@ -82,6 +97,28 @@ public class Book implements Serializable {
     public void setImageResource(int imageResource) {
         this.imageResource = imageResource;
     }
+    
+    // Alias methods to maintain compatibility with different naming conventions
+    public int getImageResourceId() {
+        return getImageResource();
+    }
+    
+    public void setImageResourceId(int imageResourceId) {
+        setImageResource(imageResourceId);
+    }
+    
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+    
+    // Helper method to check if book has a real image URL
+    public boolean hasImageUrl() {
+        return imageUrl != null && !imageUrl.isEmpty();
+    }
 
     public boolean isWishlisted() {
         return isWishlisted;
@@ -97,5 +134,34 @@ public class Book implements Serializable {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    /**
+     * Check if the book has a valid image URL
+     * @return true if the book has a non-empty image URL
+     */
+    public boolean hasValidImageUrl() {
+        return imageUrl != null && !imageUrl.isEmpty();
+    }
+    
+    /**
+     * Check if the book has a valid image resource ID
+     * @return true if the book has a non-zero image resource ID
+     */
+    public boolean hasValidImageResource() {
+        return imageResource > 0;
+    }
+    
+    /**
+     * Get the most appropriate image source for the book
+     * @return Image URL if available, otherwise null
+     */
+    public String getEffectiveImageSource() {
+        if (hasValidImageUrl()) {
+            return getImageUrl();
+        } else if (hasValidImageResource()) {
+            return "resource://" + getImageResource();
+        }
+        return null;
     }
 } 

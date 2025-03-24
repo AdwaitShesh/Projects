@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -20,13 +21,22 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.bookbridge.models.Book;
 import com.example.bookbridge.utils.BookManager;
 import com.example.bookbridge.utils.SessionManager;
 import com.example.bookbridge.data.User;
+import com.example.bookbridge.utils.BookUtils;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 
 public class SellBookActivity extends AppCompatActivity {
@@ -45,10 +55,22 @@ public class SellBookActivity extends AppCompatActivity {
     // Selected image
     private Uri imageUri;
     private boolean hasUploadedImage = false;
+    private String imageUrl; // Store the URL of the uploaded image
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Check if user is logged in
+        SessionManager sessionManager = SessionManager.getInstance(this);
+        if (!sessionManager.isLoggedIn()) {
+            // Redirect to AuthActivity
+            Intent intent = new Intent(this, AuthActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+        
         setContentView(R.layout.activity_sell_book);
 
         // Set up Toolbar
@@ -85,12 +107,16 @@ public class SellBookActivity extends AppCompatActivity {
         rgCategory.removeAllViews();
         List<String> categories = BookManager.getAllCategories();
         
+        Log.d("SellBookActivity", "Setting up category radio buttons: " + categories.size() + " categories");
+        
         for (int i = 1; i < categories.size(); i++) { // Start from 1 to skip "All"
             String category = categories.get(i);
             RadioButton rb = new RadioButton(this);
             rb.setId(View.generateViewId());
             rb.setText(category);
             rb.setTag(category); // Store category name as tag for retrieval
+            
+            Log.d("SellBookActivity", "Created radio button for category: " + category + " with tag: " + rb.getTag());
             
             // Apply the same style as other radio buttons
             rb.setBackground(getResources().getDrawable(R.drawable.radio_selector));
@@ -102,6 +128,7 @@ public class SellBookActivity extends AppCompatActivity {
             // Set the first category as checked by default
             if (i == 1) {
                 rb.setChecked(true);
+                Log.d("SellBookActivity", "Setting default selected category: " + category);
             }
             
             // Set layout parameters
@@ -149,82 +176,117 @@ public class SellBookActivity extends AppCompatActivity {
             try {
                 // Display the selected image
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
-                ivBookPhoto.setImageBitmap(bitmap);
-                ivBookPhoto.setVisibility(View.VISIBLE);
-                layoutUploadImage.setVisibility(View.GONE);
-                hasUploadedImage = true;
+                
+                // Save the image to local app storage to create a URL
+                imageUrl = saveImageToStorage(bitmap);
+                
+                // Display the image using Glide with improved configuration
+                RequestOptions requestOptions = new RequestOptions()
+                    .placeholder(R.drawable.book_placeholder)
+                    .error(R.drawable.book_placeholder)
+                    .centerCrop();
+                    
+                try {
+                    Glide.with(this)
+                        .load(bitmap)
+                        .apply(requestOptions)
+                        .transition(DrawableTransitionOptions.withCrossFade())
+                        .into(ivBookPhoto);
+                        
+                    ivBookPhoto.setVisibility(View.VISIBLE);
+                    layoutUploadImage.setVisibility(View.GONE);
+                    hasUploadedImage = true;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    ivBookPhoto.setImageResource(R.drawable.book_placeholder);
+                    Toast.makeText(this, "Failed to display image, but it was saved", Toast.LENGTH_SHORT).show();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
                 Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show();
             }
         }
     }
+    
+    // Save the bitmap image to local storage and return its path as a URL
+    private String saveImageToStorage(Bitmap bitmap) throws IOException {
+        // Create a unique filename using timestamp
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String fileName = "BOOK_" + timeStamp + ".jpg";
+        
+        // Get the app's private directory
+        File storageDir = new File(getFilesDir(), "book_images");
+        if (!storageDir.exists()) {
+            storageDir.mkdirs();
+        }
+        
+        File imageFile = new File(storageDir, fileName);
+        
+        // Save the bitmap to the file
+        FileOutputStream fos = new FileOutputStream(imageFile);
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+        fos.close();
+        
+        // Return the path as a file:// URL
+        return "file://" + imageFile.getAbsolutePath();
+    }
 
     private void validateAndListBook() {
-        // Validate all fields
-        if (!validateInputs()) {
-            return;
-        }
-
-        // Get condition
-        String condition;
-        int checkedConditionId = rgCondition.getCheckedRadioButtonId();
-        if (checkedConditionId == R.id.rb_like_new) {
-            condition = "Like New";
-        } else if (checkedConditionId == R.id.rb_good) {
-            condition = "Good";
-        } else {
-            condition = "Fair";
-        }
-
-        // Get category
-        String category = BookManager.CATEGORY_CSE; // Default to CSE
-        int selectedCategoryId = rgCategory.getCheckedRadioButtonId();
-        if (selectedCategoryId != -1) {
-            RadioButton selectedRadioButton = findViewById(selectedCategoryId);
-            if (selectedRadioButton != null && selectedRadioButton.getTag() != null) {
-                category = selectedRadioButton.getTag().toString();
-            }
-        }
-
-        // Get resource ID for a random book image if no image was uploaded
-        int resourceId;
-        if (!hasUploadedImage) {
-            int[] bookImages = {
-                R.drawable.book_dsa,
-                R.drawable.book_networks,
-                R.drawable.book_digital_logic,
-                R.drawable.book_os,
-                R.drawable.book_microprocessor,
-                R.drawable.book_toc
-            };
-            resourceId = bookImages[new Random().nextInt(bookImages.length)];
-        } else {
-            // In a real app, you would save the image to storage and get its path
-            // For this example, we'll just use a predefined resource
-            resourceId = R.drawable.book_toc;
-        }
-
-        // Create a new book
+        // Get input values
         String title = etBookTitle.getText().toString().trim();
         String author = etAuthor.getText().toString().trim();
-        double price = Double.parseDouble(etPrice.getText().toString().trim());
-        String description = "Location: " + etLocation.getText().toString().trim() +
-                ", Seller: " + etSellerName.getText().toString().trim() +
-                ", Condition: " + condition +
-                ", Category: " + category;
-
-        // Create a new Book object with a temporary ID (BookManager will assign the final ID)
-        Book newBook = new Book(0, title, author, price, description, resourceId, false, category);
+        String priceStr = etPrice.getText().toString().trim();
+        String location = etLocation.getText().toString().trim();
         
-        // Add the book to the BookManager
-        BookManager.addBook(newBook);
-
-        // In a real app, this would be added to a database
-        // For this demo, we'll just show a success message and go back
+        // Validate input
+        if (title.isEmpty() || author.isEmpty() || priceStr.isEmpty() || location.isEmpty()) {
+            Toast.makeText(this, "Please fill all required fields", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        double price = Double.parseDouble(priceStr);
+        
+        // Get selected category
+        int selectedId = rgCategory.getCheckedRadioButtonId();
+        String category = "Fiction"; // Default category
+        
+        if (selectedId != -1) {
+            RadioButton radioButton = findViewById(selectedId);
+            if (radioButton != null && radioButton.getTag() != null) {
+                category = radioButton.getTag().toString();
+                Log.d("SellBookActivity", "Selected category from radio button: " + category);
+            } else {
+                Log.w("SellBookActivity", "Radio button tag is null, using default category: " + category);
+            }
+        } else {
+            Log.w("SellBookActivity", "No category radio button selected, using default: " + category);
+        }
+        
+        // Create new book
+        Book book;
+        
+        if (imageUri != null) {
+            // Create book with selected image URI
+            String imageUrl = imageUri.toString();
+            String description = "Location: " + location +
+                    ", Seller: " + etSellerName.getText().toString().trim();
+            book = new Book(0, title, author, price, description, imageUrl, false, category);
+            Log.d("SellBookActivity", "Creating book with image URL: " + imageUrl);
+        } else {
+            // Create book with random book cover
+            int randomDrawableResId = BookUtils.getRandomBookCoverResourceId(this);
+            String description = "Location: " + location +
+                    ", Seller: " + etSellerName.getText().toString().trim();
+            book = new Book(0, title, author, price, description, randomDrawableResId, false, category);
+            Log.d("SellBookActivity", "Creating book with random resource ID: " + randomDrawableResId);
+        }
+        
+        // Add book to BookManager
+        BookManager.addBook(book);
+        Log.d("SellBookActivity", "Book added successfully: " + title + " by " + author + " in category " + category);
+        
+        // Show success message and finish activity
         Toast.makeText(this, "Book listed successfully!", Toast.LENGTH_SHORT).show();
-        
-        // Finish the activity and return to MainActivity
         finish();
     }
 

@@ -2,6 +2,7 @@ package com.example.bookbridge;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,7 +24,7 @@ import com.example.bookbridge.adapters.FeaturedBooksAdapter;
 import com.example.bookbridge.adapters.RecentBooksAdapter;
 import com.example.bookbridge.models.Book;
 import com.example.bookbridge.models.Category;
-import com.example.bookbridge.models.User;
+import com.example.bookbridge.data.User;
 import com.example.bookbridge.utils.BookManager;
 import com.example.bookbridge.utils.SessionManager;
 import com.google.android.material.badge.BadgeDrawable;
@@ -49,6 +50,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private CategoryAdapter categoryAdapter;
     private FeaturedBooksAdapter featuredBooksAdapter;
     private RecentBooksAdapter recentBooksAdapter;
+    
+    private List<Book> featuredBooks;
+    private List<Book> recentBooks;
 
     private static final int WISHLIST_REQUEST_CODE = 1001;
 
@@ -88,6 +92,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             startActivity(intent);
         });
         
+        // Initialize Glide to ensure it's ready to load images
+        initializeGlide();
+        
         // Load data
         loadCategories();
         loadFeaturedBooks();
@@ -105,13 +112,24 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         rvFeaturedBooks = findViewById(R.id.rv_featured_books);
         rvRecentBooks = findViewById(R.id.rv_recent_books);
         
+        // Initialize empty state TextViews
+        TextView tvEmptyFeatured = findViewById(R.id.tv_empty_featured);
+        TextView tvEmptyRecent = findViewById(R.id.tv_empty_recent);
+        
         // Set up RecyclerViews
         rvCategories.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         rvFeaturedBooks.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         rvRecentBooks.setLayoutManager(new GridLayoutManager(this, 2));
-    }
-
-    private void setupNavigationDrawer() {
+        
+        // Setup FAB for selling books
+        fabSellBook.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, SellBookActivity.class);
+            startActivity(intent);
+        });
+        
+        // Set up navigation drawer
+        setupDrawerHeader(navigationView);
+        
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawerLayout.addDrawerListener(toggle);
@@ -119,6 +137,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         
         navigationView.setNavigationItemSelectedListener(this);
         
+        // Set up bottom navigation
+        setupBottomNavigation();
+    }
+
+    private void setupNavigationDrawer() {
         // Set user info in nav header
         View headerView = navigationView.getHeaderView(0);
         TextView tvUserName = headerView.findViewById(R.id.tv_nav_username);
@@ -152,83 +175,47 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void setupBottomNavigation() {
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            
-            if (itemId == R.id.nav_home) {
-                // Already on home, do nothing
-                return true;
-            } else if (itemId == R.id.nav_search) {
-                // Launch SearchActivity
-                Intent intent = new Intent(MainActivity.this, SearchActivity.class);
-                startActivity(intent);
-                return true;
-            } else if (itemId == R.id.nav_cart) {
-                // Navigate to cart
-                Intent intent = new Intent(MainActivity.this, CartActivity.class);
-                startActivity(intent);
-                return true;
-            } else if (itemId == R.id.nav_wishlist) {
-                // Navigate to wishlist for result
-                Intent intent = new Intent(MainActivity.this, WishlistActivity.class);
-                startActivityForResult(intent, WISHLIST_REQUEST_CODE);
-                return true;
-            } else if (itemId == R.id.nav_profile) {
-                // Navigate to profile
-                Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
-                startActivity(intent);
-                return true;
-            }
-            
-            return false;
-        });
-        
-        // Add badges to navigation items
-        updateWishlistBadge();
-        updateCartBadge();
+        // Use the BottomNavManager utility class to setup bottom navigation
+        com.example.bookbridge.utils.BottomNavManager.setupBottomNavigation(
+                this, bottomNavigationView, R.id.nav_home);
     }
     
     // Method to update wishlist badge
     private void updateWishlistBadge() {
-        BadgeDrawable wishlistBadge = bottomNavigationView.getOrCreateBadge(R.id.nav_wishlist);
-        int wishlistCount = BookManager.getWishlistCount();
-        if (wishlistCount > 0) {
-            wishlistBadge.setVisible(true);
-            wishlistBadge.setNumber(wishlistCount);
-            // Make sure to use the unfilled icon when count is 0
-            Menu menu = bottomNavigationView.getMenu();
-            MenuItem wishlistItem = menu.findItem(R.id.nav_wishlist);
-            wishlistItem.setIcon(R.drawable.ic_favorite);
-        } else {
-            wishlistBadge.setVisible(false);
-            // Reset to outline icon when no items in wishlist
-            Menu menu = bottomNavigationView.getMenu();
-            MenuItem wishlistItem = menu.findItem(R.id.nav_wishlist);
-            wishlistItem.setIcon(R.drawable.ic_favorite_border);
-        }
+        // Use the BottomNavManager to update badges
+        com.example.bookbridge.utils.BottomNavManager.updateBadges(bottomNavigationView);
     }
     
     // Method to update cart badge
     private void updateCartBadge() {
-        BadgeDrawable cartBadge = bottomNavigationView.getOrCreateBadge(R.id.nav_cart);
-        int cartCount = com.example.bookbridge.utils.CartManager.getCartItemCount();
-        if (cartCount > 0) {
-            cartBadge.setVisible(true);
-            cartBadge.setNumber(cartCount);
-        } else {
-            cartBadge.setVisible(false);
-        }
+        // This is now handled in updateWishlistBadge through BottomNavManager
     }
     
     @Override
     protected void onResume() {
         super.onResume();
-        // Update badges every time MainActivity becomes visible
-        updateWishlistBadge();
-        updateCartBadge();
         
-        // Reload recent books when returning to the activity to show any newly added books
+        // Reset the ordered books loaded flag to ensure we get fresh data
+        try {
+            // Using reflection to reset the flag since it's private
+            java.lang.reflect.Field field = com.example.bookbridge.utils.BookManager.class.getDeclaredField("orderedBooksLoaded");
+            field.setAccessible(true);
+            field.set(null, false);
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error resetting orderedBooksLoaded flag: " + e.getMessage());
+        }
+        
+        // Reload books when returning to activity
+        loadCategories();
+        loadFeaturedBooks();
         loadRecentBooks();
+        
+        // Update navigation badges
+        if (bottomNavigationView != null) {
+            com.example.bookbridge.utils.BottomNavManager.updateBadges(bottomNavigationView);
+        }
+        
+        Log.d("MainActivity", "Activity resumed, books reloaded");
     }
 
     private void loadCategories() {
@@ -272,24 +259,47 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void loadFeaturedBooks() {
-        List<Book> featuredBooks = new ArrayList<>();
+        featuredBooks = new ArrayList<>(BookManager.getFeaturedBooks(5));
         
-        // Add example featured books (all with wishlist set to false initially)
-        featuredBooks.add(new Book(1, "Data Structures & Algorithms", "Robert Lafore", 450, "Computer Science textbook covering all fundamental algorithms and data structures", R.drawable.book_dsa, false));
-        featuredBooks.add(new Book(2, "Computer Networks", "Andrew S. Tanenbaum", 380, "Complete reference for computer networking concepts", R.drawable.book_networks, false));
-        featuredBooks.add(new Book(3, "Digital Logic Design", "Morris Mano", 290, "Comprehensive guide to digital logic and computer design", R.drawable.book_digital_logic, false));
-        featuredBooks.add(new Book(4, "Operating Systems", "Galvin", 320, "Essential concepts of modern operating systems", R.drawable.book_os, false));
+        TextView tvEmptyFeatured = findViewById(R.id.tv_empty_featured);
         
-        featuredBooksAdapter = new FeaturedBooksAdapter(this, featuredBooks);
-        rvFeaturedBooks.setAdapter(featuredBooksAdapter);
+        if (featuredBooks.isEmpty()) {
+            // Show empty state message
+            tvEmptyFeatured.setVisibility(View.VISIBLE);
+            rvFeaturedBooks.setVisibility(View.GONE);
+            Log.d("MainActivity", "No featured books available");
+        } else {
+            // Show books
+            tvEmptyFeatured.setVisibility(View.GONE);
+            rvFeaturedBooks.setVisibility(View.VISIBLE);
+            
+            featuredBooksAdapter = new FeaturedBooksAdapter(this, featuredBooks);
+            rvFeaturedBooks.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+            rvFeaturedBooks.setAdapter(featuredBooksAdapter);
+            Log.d("MainActivity", "Loaded " + featuredBooks.size() + " featured books");
+        }
     }
 
     private void loadRecentBooks() {
-        // Get recently added books from BookManager instead of creating a new list
-        List<Book> recentBooks = BookManager.getRecentlyAddedBooks();
+        recentBooks = new ArrayList<>(BookManager.getRecentBooks(5));
         
-        recentBooksAdapter = new RecentBooksAdapter(this, recentBooks);
-        rvRecentBooks.setAdapter(recentBooksAdapter);
+        TextView tvEmptyRecent = findViewById(R.id.tv_empty_recent);
+        
+        if (recentBooks.isEmpty()) {
+            // Show empty state message
+            tvEmptyRecent.setVisibility(View.VISIBLE);
+            rvRecentBooks.setVisibility(View.GONE);
+            Log.d("MainActivity", "No recent books available");
+        } else {
+            // Show books
+            tvEmptyRecent.setVisibility(View.GONE);
+            rvRecentBooks.setVisibility(View.VISIBLE);
+            
+            recentBooksAdapter = new RecentBooksAdapter(this, recentBooks);
+            rvRecentBooks.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+            rvRecentBooks.setAdapter(recentBooksAdapter);
+            Log.d("MainActivity", "Loaded " + recentBooks.size() + " recent books");
+        }
     }
 
     @Override
@@ -378,6 +388,41 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         
         if (recentBooksAdapter != null) {
             recentBooksAdapter.notifyDataSetChanged();
+        }
+    }
+
+    private void setupDrawerHeader(NavigationView navigationView) {
+        // Get the header view
+        View headerView = navigationView.getHeaderView(0);
+        
+        // Get references to the views in the header
+        TextView tvUsername = headerView.findViewById(R.id.tv_nav_username);
+        TextView tvEmail = headerView.findViewById(R.id.tv_nav_email);
+        
+        // Get user info from SessionManager
+        SessionManager sessionManager = SessionManager.getInstance(this);
+        if (sessionManager.isLoggedIn()) {
+            User user = sessionManager.getUser();
+            if (user != null) {
+                tvUsername.setText(user.getUsername());
+                tvEmail.setText(user.getEmail());
+            }
+        }
+    }
+
+    /**
+     * Initialize Glide to ensure it's ready for image loading
+     */
+    private void initializeGlide() {
+        try {
+            // Pre-initialize Glide to avoid first-load delay
+            com.bumptech.glide.Glide.with(this)
+                .load(R.drawable.book_placeholder)
+                .preload();
+            
+            Log.d("MainActivity", "Glide initialized successfully");
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error initializing Glide: " + e.getMessage());
         }
     }
 }

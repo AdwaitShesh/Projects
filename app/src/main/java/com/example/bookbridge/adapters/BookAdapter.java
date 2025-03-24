@@ -13,6 +13,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.bookbridge.BookDetailsActivity;
 import com.example.bookbridge.MainActivity;
 import com.example.bookbridge.R;
@@ -46,7 +49,9 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder
         holder.tvBookTitle.setText(book.getTitle());
         holder.tvBookAuthor.setText(book.getAuthor());
         holder.tvBookPrice.setText(String.format(Locale.getDefault(), "₹%.2f", book.getPrice()));
-        holder.ivBookCover.setImageResource(book.getImageResource());
+        
+        // Load image using Glide
+        loadBookImage(holder.ivBookCover, book);
         
         // Always get fresh state from BookManager to ensure consistency
         Book bookInManager = BookManager.getBookById(book.getId());
@@ -67,6 +72,7 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder
         });
 
         holder.ivWishlist.setOnClickListener(v -> {
+            // Toggle wishlist state
             book.setWishlisted(!book.isWishlisted());
             
             // Update the same book in BookManager
@@ -92,48 +98,81 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder
         });
     }
     
+    private void loadBookImage(ImageView imageView, Book book) {
+        RequestOptions requestOptions = new RequestOptions()
+                .placeholder(R.drawable.book_placeholder)
+                .error(R.drawable.book_placeholder)
+                .centerCrop(); // Ensure images are properly cropped to fit
+
+        try {
+            if (book.hasImageUrl()) {
+                // Load from URL if available
+                Glide.with(context)
+                    .load(book.getImageUrl())
+                    .apply(requestOptions)
+                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .into(imageView);
+            } else if (book.getImageResource() != 0) {
+                // Load from resource ID if URL not available
+                Glide.with(context)
+                    .load(book.getImageResource())
+                    .apply(requestOptions)
+                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .into(imageView);
+            } else {
+                // Fallback to placeholder if no image is available
+                Glide.with(context)
+                    .load(R.drawable.book_placeholder)
+                    .apply(requestOptions)
+                    .into(imageView);
+            }
+        } catch (Exception e) {
+            // Handle any errors during image loading
+            imageView.setImageResource(R.drawable.book_placeholder);
+            e.printStackTrace();
+        }
+    }
+
     private void updateWishlistIcon(ImageView imageView, boolean isWishlisted) {
         imageView.setImageResource(isWishlisted ? R.drawable.ic_favorite : R.drawable.ic_favorite_border);
     }
 
     @Override
     public int getItemCount() {
-        return books.size();
+        return books != null ? books.size() : 0;
     }
-    
-    public void setBooks(List<Book> books) {
-        this.books = new ArrayList<>(books);
+
+    // Add a book to the list
+    public void addBook(Book book) {
+        books.add(book);
+        notifyItemInserted(books.size() - 1);
+    }
+
+    // Add multiple books to the list
+    public void addBooks(List<Book> books) {
+        int startPos = this.books.size();
+        this.books.addAll(books);
+        notifyItemRangeInserted(startPos, books.size());
+    }
+
+    // Clear the list
+    public void clearBooks() {
+        books.clear();
         notifyDataSetChanged();
     }
 
-    public void refreshBooks() {
-        // Update all book wishlist states from the BookManager
-        for (Book book : books) {
-            Book bookInManager = BookManager.getBookById(book.getId());
-            if (bookInManager != null) {
-                book.setWishlisted(bookInManager.isWishlisted());
-            }
+    // Get a book at a specific position
+    public Book getBook(int position) {
+        if (position >= 0 && position < books.size()) {
+            return books.get(position);
         }
-        notifyDataSetChanged();
+        return null;
     }
     
-    // This method can be called when the activity resumes
-    public void syncWishlistState() {
-        boolean dataChanged = false;
-        
-        // Check if any book's wishlist state needs updating
-        for (Book book : books) {
-            Book bookInManager = BookManager.getBookById(book.getId());
-            if (bookInManager != null && book.isWishlisted() != bookInManager.isWishlisted()) {
-                book.setWishlisted(bookInManager.isWishlisted());
-                dataChanged = true;
-            }
-        }
-        
-        // Only update the UI if needed
-        if (dataChanged) {
-            notifyDataSetChanged();
-        }
+    // Set the list of books (replace the current list)
+    public void setBooks(List<Book> books) {
+        this.books = new ArrayList<>(books);
+        notifyDataSetChanged();
     }
 
     static class BookViewHolder extends RecyclerView.ViewHolder {

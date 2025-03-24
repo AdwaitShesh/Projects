@@ -18,9 +18,9 @@ import com.example.bookbridge.MainActivity;
 import com.example.bookbridge.R;
 import com.example.bookbridge.adapters.OrdersAdapter;
 import com.example.bookbridge.models.Order;
+import com.example.bookbridge.utils.OrderManager;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
 public class OrdersFragment extends Fragment {
@@ -85,26 +85,8 @@ public class OrdersFragment extends Fragment {
         // Clear existing orders
         orderList.clear();
         
-        // Create mock orders for demonstration
-        Calendar calendar = Calendar.getInstance();
-        
-        // First order
-        Order order1 = new Order();
-        order1.setOrderId("174198219937");
-        calendar.set(2025, Calendar.MARCH, 15);
-        order1.setOrderDate(calendar.getTime());
-        order1.setStatus("pending");
-        order1.setPaymentMethod("cod");
-        orderList.add(order1);
-        
-        // Second order
-        Order order2 = new Order();
-        order2.setOrderId("order_174199174163_72mj4v0al");
-        calendar.set(2025, Calendar.MARCH, 15);
-        order2.setOrderDate(calendar.getTime());
-        order2.setStatus("pending");
-        order2.setPaymentMethod("upi");
-        orderList.add(order2);
+        // Get orders from OrderManager
+        orderList.addAll(OrderManager.getOrders());
         
         // Update UI
         updateUI();

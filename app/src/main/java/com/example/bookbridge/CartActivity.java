@@ -15,8 +15,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.bookbridge.adapters.CartAdapter;
 import com.example.bookbridge.models.Book;
+import com.example.bookbridge.utils.BottomNavManager;
 import com.example.bookbridge.utils.CartManager;
 import com.example.bookbridge.utils.SessionManager;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -31,6 +33,7 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.CartI
     private Button btnCheckout;
     private View layoutCartSummary;
     private CartAdapter cartAdapter;
+    private BottomNavigationView bottomNavigationView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,10 +67,14 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.CartI
         tvItemCount = findViewById(R.id.tv_item_count);
         btnCheckout = findViewById(R.id.btn_checkout);
         layoutCartSummary = findViewById(R.id.layout_cart_summary);
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
 
         // Set up RecyclerView
         rvCartItems.setLayoutManager(new LinearLayoutManager(this));
 
+        // Set up bottom navigation
+        setupBottomNavigation();
+        
         // Load cart items
         loadCartItems();
 
@@ -78,21 +85,36 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.CartI
                 return;
             }
             
-            // Get the first book for checkout (for simplicity)
+            // Get all books in cart
             List<Integer> bookIds = CartManager.getCartBookIds();
             if (!bookIds.isEmpty()) {
-                int bookId = bookIds.get(0);
-                Book book = com.example.bookbridge.utils.BookManager.getBookById(bookId);
-                
-                Intent intent = new Intent(CartActivity.this, CheckoutActivity.class);
-                intent.putExtra("book_id", bookId);
-                intent.putExtra("book_title", book.getTitle());
-                // Calculate total with discount
+                // Get total cart value
                 double totalAmount = CartManager.getCartTotal();
+                
+                // Create intent to checkout activity
+                Intent intent = new Intent(CartActivity.this, CheckoutActivity.class);
+                
+                // If there is only one book, pass its details
+                if (bookIds.size() == 1) {
+                    int bookId = bookIds.get(0);
+                    Book book = com.example.bookbridge.utils.BookManager.getBookById(bookId);
+                    intent.putExtra("book_id", bookId);
+                    intent.putExtra("book_title", book.getTitle());
+                } else {
+                    // For multiple books, create a summary
+                    intent.putExtra("book_title", bookIds.size() + " books in your cart");
+                }
+                
+                // Pass the total price
                 intent.putExtra("book_price", totalAmount);
                 startActivity(intent);
             }
         });
+    }
+    
+    private void setupBottomNavigation() {
+        // Use BottomNavManager to set up bottom navigation
+        BottomNavManager.setupBottomNavigation(this, bottomNavigationView, R.id.nav_cart);
     }
     
     @Override
@@ -100,6 +122,11 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.CartI
         super.onResume();
         // Refresh cart items in case they were modified
         loadCartItems();
+        
+        // Update badges
+        if (bottomNavigationView != null) {
+            BottomNavManager.updateBadges(bottomNavigationView);
+        }
     }
 
     private void loadCartItems() {

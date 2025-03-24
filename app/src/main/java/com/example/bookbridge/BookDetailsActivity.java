@@ -3,6 +3,7 @@ package com.example.bookbridge;
 import android.content.Intent;
 import android.graphics.Paint;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -22,7 +23,9 @@ import com.example.bookbridge.models.Book;
 import com.example.bookbridge.models.Review;
 import com.example.bookbridge.utils.BookManager;
 import com.example.bookbridge.utils.CartManager;
+import com.example.bookbridge.utils.ImageUtils;
 import com.example.bookbridge.utils.SessionManager;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -97,6 +100,9 @@ public class BookDetailsActivity extends AppCompatActivity {
 
         // Set up listeners
         setupListeners();
+        
+        // Set up bottom navigation
+        setupBottomNavigation();
     }
 
     private void initViews() {
@@ -111,9 +117,27 @@ public class BookDetailsActivity extends AppCompatActivity {
         tvSellerLocation = findViewById(R.id.tv_seller_location);
         tvCondition = findViewById(R.id.tv_condition);
         tvCategory = findViewById(R.id.tv_category);
+        
+        // Initialize action buttons and ensure they're visible
         btnAddToCart = findViewById(R.id.btn_add_to_cart);
         btnBuyNow = findViewById(R.id.btn_buy_now);
         btnContactSeller = findViewById(R.id.btn_contact_seller);
+        
+        // Set buttons visible and log their state
+        if (btnAddToCart != null) {
+            btnAddToCart.setVisibility(View.VISIBLE);
+            Log.d("BookDetailsActivity", "Add to Cart button initialized and set to VISIBLE");
+        } else {
+            Log.e("BookDetailsActivity", "Add to Cart button not found in layout");
+        }
+        
+        if (btnBuyNow != null) {
+            btnBuyNow.setVisibility(View.VISIBLE);
+            Log.d("BookDetailsActivity", "Buy Now button initialized and set to VISIBLE");
+        } else {
+            Log.e("BookDetailsActivity", "Buy Now button not found in layout");
+        }
+        
         ivWishlist = findViewById(R.id.iv_book_wishlist);
         ivShare = findViewById(R.id.iv_book_share);
         rvSuggestedBooks = findViewById(R.id.rv_suggested_books);
@@ -128,8 +152,10 @@ public class BookDetailsActivity extends AppCompatActivity {
     }
 
     private void displayBookDetails() {
-        // Set book details
-        ivBookCover.setImageResource(book.getImageResource());
+        // Load book cover using our utility class
+        ImageUtils.loadBookCover(this, ivBookCover, book);
+        
+        // Set other book details
         tvBookTitle.setText(book.getTitle());
         tvBookAuthor.setText("by " + book.getAuthor());
         
@@ -247,21 +273,43 @@ public class BookDetailsActivity extends AppCompatActivity {
             startActivity(Intent.createChooser(shareIntent, "Share via"));
         });
 
-        // Add to Cart button
+        // Add to Cart button - make sure it's visible and working
+        btnAddToCart.setVisibility(View.VISIBLE);
         btnAddToCart.setOnClickListener(v -> {
-            com.example.bookbridge.utils.CartManager.addToCart(book.getId());
+            CartManager.addToCart(book.getId());
             Toast.makeText(this, "Added to cart", Toast.LENGTH_SHORT).show();
+            
+            // Update cart badge
+            BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+            if (bottomNavigationView != null) {
+                com.example.bookbridge.utils.BottomNavManager.updateBadges(bottomNavigationView);
+            }
         });
 
-        // Buy Now button
+        // Buy Now button - make sure it's visible and working
+        btnBuyNow.setVisibility(View.VISIBLE);
         btnBuyNow.setOnClickListener(v -> {
-            Intent intent = new Intent(BookDetailsActivity.this, CheckoutActivity.class);
-            intent.putExtra("book_id", book.getId());
-            intent.putExtra("book_title", book.getTitle());
-            // Calculate 20% discount
-            double discountedPrice = book.getPrice() * 0.8; // 20% off
-            intent.putExtra("book_price", discountedPrice);
-            startActivity(intent);
+            try {
+                Log.d("BookDetailsActivity", "Buy Now button clicked for book ID: " + book.getId());
+                
+                // Calculate 20% discount
+                double discountedPrice = book.getPrice() * 0.8; // 20% off
+                Log.d("BookDetailsActivity", "Calculated discounted price: " + discountedPrice);
+                
+                // Create intent to CheckoutActivity
+                Intent intent = new Intent(BookDetailsActivity.this, CheckoutActivity.class);
+                intent.putExtra("book_id", book.getId());
+                intent.putExtra("book_title", book.getTitle());
+                intent.putExtra("book_price", discountedPrice);
+                
+                Log.d("BookDetailsActivity", "Starting CheckoutActivity with book: " + book.getTitle());
+                startActivity(intent);
+            } catch (Exception e) {
+                Log.e("BookDetailsActivity", "Error navigating to checkout: " + e.getMessage(), e);
+                Toast.makeText(BookDetailsActivity.this, 
+                    "Sorry, there was a problem processing your request. Please try again.", 
+                    Toast.LENGTH_SHORT).show();
+            }
         });
 
         // Contact Seller button
@@ -293,6 +341,26 @@ public class BookDetailsActivity extends AppCompatActivity {
             
             Toast.makeText(this, "Review submitted!", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void setupBottomNavigation() {
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        if (bottomNavigationView != null) {
+            // Use BottomNavManager to set up bottom navigation
+            com.example.bookbridge.utils.BottomNavManager.setupBottomNavigation(
+                    this, bottomNavigationView, R.id.nav_home);
+        }
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        
+        // Update badges
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        if (bottomNavigationView != null) {
+            com.example.bookbridge.utils.BottomNavManager.updateBadges(bottomNavigationView);
+        }
     }
 
     // Static method to start this activity

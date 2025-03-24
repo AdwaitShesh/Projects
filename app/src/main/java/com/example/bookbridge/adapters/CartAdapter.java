@@ -15,6 +15,7 @@ import com.example.bookbridge.BookDetailsActivity;
 import com.example.bookbridge.R;
 import com.example.bookbridge.models.Book;
 import com.example.bookbridge.utils.CartManager;
+import com.example.bookbridge.utils.ImageUtils;
 
 import java.text.DecimalFormat;
 import java.util.List;
@@ -60,7 +61,8 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
         DecimalFormat df = new DecimalFormat("0.00");
         holder.tvBookPrice.setText(String.format(Locale.getDefault(), "₹%s", df.format(discountedPrice)));
         
-        holder.ivBookCover.setImageResource(book.getImageResource());
+        // Use ImageUtils to load the book cover image
+        ImageUtils.loadBookCover(context, holder.ivBookCover, book);
         holder.tvQuantity.setText(String.valueOf(quantity));
 
         // Set up item click

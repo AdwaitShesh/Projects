@@ -3,13 +3,17 @@ package com.example.bookbridge;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.bookbridge.models.Book;
+import com.example.bookbridge.models.Order;
 import com.example.bookbridge.utils.BookManager;
+import com.example.bookbridge.utils.CartManager;
+import com.example.bookbridge.utils.OrderManager;
 
 import java.text.DecimalFormat;
 import java.util.Locale;
@@ -48,6 +52,24 @@ public class PaymentSuccessfulActivity extends AppCompatActivity {
             if (book != null) {
                 tvBookTitle.setText(book.getTitle());
             }
+        }
+        
+        // Create order from cart items
+        try {
+            // Determine payment method based on intent data or default to COD
+            String paymentMethod = getIntent().getStringExtra("payment_method");
+            if (paymentMethod == null || paymentMethod.isEmpty()) {
+                paymentMethod = "cod"; // Default to cash on delivery
+            }
+            
+            // Create the order using OrderManager
+            Order order = OrderManager.createOrderFromCart(paymentMethod);
+            Log.d("PaymentSuccessfulActivity", "Created new order: " + order.getOrderId());
+            
+            // Now it's safe to clear the cart after creating the order
+            CartManager.clearCart();
+        } catch (Exception e) {
+            Log.e("PaymentSuccessfulActivity", "Error creating order: " + e.getMessage(), e);
         }
 
         // Set up Continue Shopping button

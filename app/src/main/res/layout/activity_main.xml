@@ -157,6 +157,17 @@
                         android:orientation="horizontal"
                         android:paddingStart="4dp"
                         android:paddingEnd="4dp" />
+                        
+                    <TextView
+                        android:id="@+id/tv_empty_featured"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center"
+                        android:text="No featured books available"
+                        android:textColor="@color/gray"
+                        android:textSize="16sp"
+                        android:visibility="gone" />
                 </LinearLayout>
 
                 <!-- Recent Books -->
@@ -200,6 +211,17 @@
                         android:paddingStart="4dp"
                         android:paddingEnd="4dp"
                         android:paddingBottom="80dp" />
+                        
+                    <TextView
+                        android:id="@+id/tv_empty_recent"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center"
+                        android:text="No recently added books"
+                        android:textColor="@color/gray"
+                        android:textSize="16sp"
+                        android:visibility="gone" />
                 </LinearLayout>
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>

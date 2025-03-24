@@ -3,6 +3,7 @@ package com.example.bookbridge;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -16,11 +17,14 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import com.example.bookbridge.models.Book;
 import com.example.bookbridge.utils.BookManager;
 import com.example.bookbridge.utils.SessionManager;
 import com.example.bookbridge.data.User;
+import com.example.bookbridge.utils.CartManager;
+import com.example.bookbridge.utils.BottomNavManager;
 
 import java.text.DecimalFormat;
 import java.util.Locale;
@@ -59,61 +63,74 @@ public class CheckoutActivity extends AppCompatActivity {
         }
         
         setContentView(R.layout.activity_checkout);
-
-        // Get data from intent
-        int bookId = getIntent().getIntExtra("book_id", -1);
-        bookPrice = getIntent().getDoubleExtra("book_price", 0.0);
-        bookTitle = getIntent().getStringExtra("book_title");
-
-        // Get book from BookManager if available
-        if (bookId != -1) {
-            book = BookManager.getBookById(bookId);
-        }
-
-        // Set up toolbar
-        toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle(getString(R.string.checkout));
-        toolbar.setNavigationOnClickListener(v -> onBackPressed());
-
+        
         // Initialize views
         initViews();
         
-        // Pre-fill user information from SessionManager
-        prefillUserInfo();
+        // Set up toolbar
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("Checkout");
+        }
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
         
-        // Setup bank spinner
+        // Setup the spinner for bank selection
         setupSpinner();
         
-        // Setup radio button listeners
+        // Setup payment method listeners
         setupPaymentMethodListeners();
         
-        // Cash on Delivery is checked by default in XML
+        // Set up bottom navigation
+        setupBottomNavigation();
         
-        // Set order summary
-        displayOrderSummary();
-
-        // Set click listener for Proceed to Pay button
-        btnProceedToPay.setOnClickListener(v -> {
-            if (validateInputs()) {
-                // Get selected payment method
-                int selectedPaymentId = rgPaymentMethod.getCheckedRadioButtonId();
-                RadioButton selectedPayment = findViewById(selectedPaymentId);
-                String paymentMethod = selectedPayment.getText().toString();
-
-                // Navigate to payment successful screen
-                Intent intent = new Intent(CheckoutActivity.this, PaymentSuccessfulActivity.class);
-                intent.putExtra("book_id", bookId);
-                intent.putExtra("book_title", bookTitle);
-                intent.putExtra("total_amount", calculateTotalAmount());
-                intent.putExtra("payment_method", paymentMethod);
-                startActivity(intent);
-                finish();
+        // Get the book details from intent with logging
+        Intent receivedIntent = getIntent();
+        Log.d("CheckoutActivity", "Received intent: " + receivedIntent);
+        
+        if (receivedIntent.hasExtra("book_id")) {
+            int bookId = receivedIntent.getIntExtra("book_id", -1);
+            Log.d("CheckoutActivity", "Received book ID: " + bookId);
+            
+            book = BookManager.getBookById(bookId);
+            if (book != null) {
+                Log.d("CheckoutActivity", "Found book: " + book.getTitle());
             } else {
-                Toast.makeText(this, getString(R.string.enter_valid_details), Toast.LENGTH_SHORT).show();
+                Log.e("CheckoutActivity", "Book not found for ID: " + bookId);
             }
-        });
+        } else {
+            Log.d("CheckoutActivity", "No book ID in intent");
+        }
+        
+        // Get other details from intent
+        if (receivedIntent.hasExtra("book_title")) {
+            bookTitle = receivedIntent.getStringExtra("book_title");
+            Log.d("CheckoutActivity", "Received book title: " + bookTitle);
+        } else {
+            Log.d("CheckoutActivity", "No book title in intent");
+            bookTitle = "Your Purchase";
+        }
+        
+        if (receivedIntent.hasExtra("book_price")) {
+            bookPrice = receivedIntent.getDoubleExtra("book_price", 0.0);
+            Log.d("CheckoutActivity", "Received book price: " + bookPrice);
+        } else {
+            Log.d("CheckoutActivity", "No book price in intent");
+            // Try to get price from book object if available
+            if (book != null) {
+                bookPrice = book.getPrice() * 0.8; // 20% discount
+                Log.d("CheckoutActivity", "Using book price from object: " + bookPrice);
+            }
+        }
+        
+        // Display order summary
+        displayOrderSummary();
+        
+        // Prefill user info from session
+        prefillUserInfo();
+        
+        // Set up button click listener for proceeding to payment
+        setupPaymentButton();
     }
 
     private void initViews() {
@@ -123,6 +140,9 @@ public class CheckoutActivity extends AppCompatActivity {
         etState = findViewById(R.id.et_state);
         etPincode = findViewById(R.id.et_pincode);
         etPhone = findViewById(R.id.et_phone);
+        
+        // Initialize toolbar
+        toolbar = findViewById(R.id.toolbar);
         
         // Payment option radio buttons
         rgPaymentMethod = findViewById(R.id.rg_payment_method);
@@ -249,7 +269,8 @@ public class CheckoutActivity extends AppCompatActivity {
             EditText etExpiryDate = findViewById(R.id.et_expiry_date);
             EditText etCvv = findViewById(R.id.et_cvv);
             
-            if (TextUtils.isEmpty(etCardNumber.getText()) || etCardNumber.getText().length() < 16) {
+            // Modified validation to accept any 16-digit number
+            if (TextUtils.isEmpty(etCardNumber.getText()) || etCardNumber.getText().length() != 16) {
                 etCardNumber.setError(getString(R.string.valid_card_required));
                 isValid = false;
             }
@@ -301,5 +322,75 @@ public class CheckoutActivity extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    private void setupBottomNavigation() {
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        if (bottomNavigationView != null) {
+            // Use BottomNavManager to set up bottom navigation
+            BottomNavManager.setupBottomNavigation(
+                    this, bottomNavigationView, R.id.nav_cart);
+        }
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        
+        // Update badges
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        if (bottomNavigationView != null) {
+            BottomNavManager.updateBadges(bottomNavigationView);
+        }
+    }
+
+    private void setupPaymentButton() {
+        btnProceedToPay.setOnClickListener(v -> {
+            if (validateInputs()) {
+                try {
+                    // Calculate total amount (including delivery charge)
+                    double totalWithDelivery = calculateTotalAmount();
+                    Log.d("CheckoutActivity", "Proceeding to payment with total: " + totalWithDelivery);
+                    
+                    // Get selected payment method
+                    String paymentMethod = getSelectedPaymentMethod();
+                    
+                    // Process payment
+                    Intent intent = new Intent(CheckoutActivity.this, PaymentSuccessfulActivity.class);
+                    
+                    // Pass relevant information to PaymentSuccessfulActivity
+                    intent.putExtra("total_amount", totalWithDelivery);
+                    intent.putExtra("book_title", bookTitle);
+                    intent.putExtra("payment_method", paymentMethod);
+                    if (book != null) {
+                        intent.putExtra("book_id", book.getId());
+                    }
+                    
+                    startActivity(intent);
+                    finish();
+                } catch (Exception e) {
+                    Log.e("CheckoutActivity", "Error processing payment: " + e.getMessage(), e);
+                    Toast.makeText(CheckoutActivity.this, 
+                        "Error processing payment. Please try again.", 
+                        Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Log.d("CheckoutActivity", "Input validation failed");
+            }
+        });
+    }
+    
+    private String getSelectedPaymentMethod() {
+        int selectedId = rgPaymentMethod.getCheckedRadioButtonId();
+        if (selectedId == R.id.rb_cash_on_delivery) {
+            return "cod";
+        } else if (selectedId == R.id.rb_upi) {
+            return "upi";
+        } else if (selectedId == R.id.rb_net_banking) {
+            return "netbanking";
+        } else if (selectedId == R.id.rb_credit_card) {
+            return "card";
+        }
+        return "cod"; // Default to COD
     }
 } 

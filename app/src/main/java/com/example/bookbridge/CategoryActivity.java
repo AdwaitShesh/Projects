@@ -3,6 +3,7 @@ package com.example.bookbridge;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
@@ -14,6 +15,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.bookbridge.adapters.BookAdapter;
 import com.example.bookbridge.models.Book;
 import com.example.bookbridge.utils.BookManager;
+import com.example.bookbridge.utils.BottomNavManager;
+import com.example.bookbridge.utils.SessionManager;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.List;
 
@@ -25,6 +29,7 @@ public class CategoryActivity extends AppCompatActivity {
     private TextView tvEmptyCategory;
     private BookAdapter bookAdapter;
     private String category;
+    private BottomNavigationView bottomNavigationView;
 
     public static void start(Context context, String category) {
         Intent intent = new Intent(context, CategoryActivity.class);
@@ -35,6 +40,17 @@ public class CategoryActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Check if user is logged in
+        SessionManager sessionManager = SessionManager.getInstance(this);
+        if (!sessionManager.isLoggedIn()) {
+            // Redirect to AuthActivity
+            Intent intent = new Intent(this, AuthActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+        
         setContentView(R.layout.activity_category);
 
         // Get category from intent
@@ -53,6 +69,9 @@ public class CategoryActivity extends AppCompatActivity {
         getSupportActionBar().setTitle(category + " Books");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
+        
+        // Setup bottom navigation
+        setupBottomNavigation();
 
         // Load books by category
         loadBooks();
@@ -61,11 +80,17 @@ public class CategoryActivity extends AppCompatActivity {
     private void initViews() {
         rvBooks = findViewById(R.id.rv_category_books);
         tvEmptyCategory = findViewById(R.id.tv_empty_category);
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
         
         // Set up RecyclerView with grid layout (2 columns)
         rvBooks.setLayoutManager(new GridLayoutManager(this, 2));
         bookAdapter = new BookAdapter(this);
         rvBooks.setAdapter(bookAdapter);
+    }
+    
+    private void setupBottomNavigation() {
+        // Use BottomNavManager to set up bottom navigation
+        BottomNavManager.setupBottomNavigation(this, bottomNavigationView, R.id.nav_home);
     }
 
     private void loadBooks() {
@@ -90,9 +115,19 @@ public class CategoryActivity extends AppCompatActivity {
         // Reload books when returning to activity to reflect any changes
         loadBooks();
         
-        // Sync wishlist state
-        if (bookAdapter != null) {
-            bookAdapter.syncWishlistState();
+        // Update badges
+        if (bottomNavigationView != null) {
+            BottomNavManager.updateBadges(bottomNavigationView);
         }
+        
+        // Log book count for debugging
+        List<Book> books = BookManager.getBooksByCategory(category);
+        Log.d("CategoryActivity", "Category: " + category + " has " + books.size() + " books");
+    }
+    
+    // Synchronize wishlist state with bookManager
+    private void syncWishlistState() {
+        // This method is intentionally empty as its functionality 
+        // has been replaced by the BookAdapter's way of handling wishlist state
     }
 } 

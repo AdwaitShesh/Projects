@@ -2,6 +2,7 @@ package com.example.bookbridge.adapters;
 
 import android.content.Context;
 import android.graphics.Paint;
+import android.util.Log;
 import android.widget.Toast;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +15,9 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.bookbridge.BookDetailsActivity;
 import com.example.bookbridge.MainActivity;
 import com.example.bookbridge.R;
@@ -21,6 +25,7 @@ import com.example.bookbridge.models.Book;
 import com.example.bookbridge.utils.BookManager;
 import com.example.bookbridge.utils.CartManager;
 import com.example.bookbridge.WishlistActivity;
+import com.example.bookbridge.utils.ImageUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +55,9 @@ public class WishlistAdapter extends RecyclerView.Adapter<WishlistAdapter.Wishli
         // Set book details
         holder.tvBookTitle.setText(book.getTitle());
         holder.tvBookAuthor.setText(book.getAuthor());
-        holder.ivBookCover.setImageResource(book.getImageResource());
+        
+        // Load image using our utility class
+        ImageUtils.loadBookCover(context, holder.ivBookCover, book);
 
         // Set prices
         double originalPrice = book.getPrice();

@@ -13,7 +13,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.bookbridge.adapters.WishlistAdapter;
 import com.example.bookbridge.models.Book;
 import com.example.bookbridge.utils.BookManager;
+import com.example.bookbridge.utils.BottomNavManager;
 import com.example.bookbridge.utils.SessionManager;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +25,7 @@ public class WishlistActivity extends AppCompatActivity {
     private RecyclerView rvWishlist;
     private TextView tvEmptyWishlist;
     private WishlistAdapter wishlistAdapter;
+    private BottomNavigationView bottomNavigationView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +46,9 @@ public class WishlistActivity extends AppCompatActivity {
         // Initialize views
         initViews();
 
+        // Setup bottom navigation
+        setupBottomNavigation();
+        
         // Load wishlisted books
         loadWishlistedBooks();
     }
@@ -56,11 +62,17 @@ public class WishlistActivity extends AppCompatActivity {
 
         rvWishlist = findViewById(R.id.rv_wishlist);
         tvEmptyWishlist = findViewById(R.id.tv_empty_wishlist);
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
 
         // Set up RecyclerView
         rvWishlist.setLayoutManager(new LinearLayoutManager(this));
         wishlistAdapter = new WishlistAdapter(this);
         rvWishlist.setAdapter(wishlistAdapter);
+    }
+    
+    private void setupBottomNavigation() {
+        // Use BottomNavManager to set up bottom navigation
+        BottomNavManager.setupBottomNavigation(this, bottomNavigationView, R.id.nav_wishlist);
     }
 
     private void loadWishlistedBooks() {
@@ -96,6 +108,11 @@ public class WishlistActivity extends AppCompatActivity {
         super.onResume();
         // Reload wishlist when returning to activity
         loadWishlistedBooks();
+        
+        // Update badges
+        if (bottomNavigationView != null) {
+            BottomNavManager.updateBadges(bottomNavigationView);
+        }
     }
 
     @Override
@@ -112,5 +129,10 @@ public class WishlistActivity extends AppCompatActivity {
     public void onBookRemovedFromWishlist() {
         // Set result to notify MainActivity that changes were made
         setResult(RESULT_OK);
+        
+        // Update badges on remove
+        if (bottomNavigationView != null) {
+            BottomNavManager.updateBadges(bottomNavigationView);
+        }
     }
 } 

@@ -1,6 +1,7 @@
 package com.example.bookbridge.adapters;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.bookbridge.BookDetailsActivity;
 import com.example.bookbridge.R;
 import com.example.bookbridge.models.Book;
+import com.example.bookbridge.utils.ImageUtils;
 
 import java.util.List;
 import java.util.Locale;
@@ -42,7 +44,9 @@ public class SuggestedBooksAdapter extends RecyclerView.Adapter<SuggestedBooksAd
         holder.tvBookTitle.setText(book.getTitle());
         holder.tvBookAuthor.setText(book.getAuthor());
         holder.tvBookPrice.setText(String.format(Locale.getDefault(), "₹%.2f", book.getPrice()));
-        holder.ivBookCover.setImageResource(book.getImageResource());
+        
+        // Load image using our utility class
+        ImageUtils.loadBookCover(context, holder.ivBookCover, book);
 
         holder.cardBook.setOnClickListener(v -> {
             // Open book details
