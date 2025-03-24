@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="180dp"
+    android:viewportWidth="120"
+    android:viewportHeight="180">
+    <path
+        android:fillColor="#5E35B1"
+        android:pathData="M0,0h120v180h-120z" />
+    
+    <!-- Title -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,30h80v5h-80z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,40h60v5h-60z" />
+    
+    <!-- Brain Image -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,90a25,25 0 1,0 0,-50a25,25 0 1,0 0,50z" />
+    
+    <!-- Brain Details -->
+    <path
+        android:fillColor="#5E35B1"
+        android:pathData="M50,60c0,0 5,5 10,5c5,0 10,-5 10,-5" />
+    <path
+        android:fillColor="#5E35B1"
+        android:pathData="M45,70c0,0 10,8 15,8c5,0 15,-8 15,-8" />
+    <path
+        android:fillColor="#5E35B1"
+        android:pathData="M60,65v10" />
+    <path
+        android:fillColor="#5E35B1"
+        android:pathData="M50,65v10" />
+    <path
+        android:fillColor="#5E35B1"
+        android:pathData="M70,65v10" />
+    
+    <!-- Circuit Lines -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,110h60v1h-60z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,120h60v1h-60z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,130h60v1h-60z" />
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,110v10h1v-10z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,110v20h1v-20z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,120v10h1v-10z" />
+    
+    <!-- Nodes -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,110a2,2 0 1,0 4,0a2,2 0 1,0 -4,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,110a2,2 0 1,0 4,0a2,2 0 1,0 -4,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,120a2,2 0 1,0 4,0a2,2 0 1,0 -4,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,120a2,2 0 1,0 4,0a2,2 0 1,0 -4,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,130a2,2 0 1,0 4,0a2,2 0 1,0 -4,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,130a2,2 0 1,0 4,0a2,2 0 1,0 -4,0" />
+    
+    <!-- Author -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,150h60v3h-60z" />
+</vector> 

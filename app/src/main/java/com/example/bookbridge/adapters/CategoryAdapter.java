@@ -4,32 +4,27 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.bookbridge.R;
+import com.example.bookbridge.models.Category;
 
 import java.util.List;
 
 public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder> {
 
     private Context context;
-    private List<String> categories;
-    private int selectedPosition = 0; // Default to first item (All)
-    private OnCategoryClickListener listener;
+    private List<Category> categories;
 
-    public interface OnCategoryClickListener {
-        void onCategoryClick(String category, int position);
-    }
-
-    public CategoryAdapter(Context context, List<String> categories, OnCategoryClickListener listener) {
+    public CategoryAdapter(Context context, List<Category> categories) {
         this.context = context;
         this.categories = categories;
-        this.listener = listener;
     }
 
     @NonNull
@@ -41,30 +36,13 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
 
     @Override
     public void onBindViewHolder(@NonNull CategoryViewHolder holder, int position) {
-        String category = categories.get(position);
-        holder.categoryName.setText(category);
-        
-        // Set selected state
-        if (position == selectedPosition) {
-            holder.cardView.setCardBackgroundColor(ContextCompat.getColor(context, android.R.color.holo_blue_dark));
-            holder.categoryName.setTextColor(ContextCompat.getColor(context, android.R.color.white));
-        } else {
-            holder.cardView.setCardBackgroundColor(ContextCompat.getColor(context, android.R.color.white));
-            holder.categoryName.setTextColor(ContextCompat.getColor(context, android.R.color.black));
-        }
-        
-        // Set click listener
-        holder.itemView.setOnClickListener(v -> {
-            int previousSelected = selectedPosition;
-            selectedPosition = holder.getAdapterPosition();
-            
-            // Update previous and new selected items
-            notifyItemChanged(previousSelected);
-            notifyItemChanged(selectedPosition);
-            
-            if (listener != null) {
-                listener.onCategoryClick(category, position);
-            }
+        Category category = categories.get(position);
+        holder.tvCategoryName.setText(category.getName());
+        holder.ivCategoryIcon.setImageResource(category.getIconResource());
+
+        holder.cardCategory.setOnClickListener(v -> {
+            Toast.makeText(context, category.getName() + " books coming soon!", Toast.LENGTH_SHORT).show();
+            // TODO: Navigate to category details screen
         });
     }
 
@@ -72,15 +50,17 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
     public int getItemCount() {
         return categories.size();
     }
-    
-    public static class CategoryViewHolder extends RecyclerView.ViewHolder {
-        CardView cardView;
-        TextView categoryName;
-        
+
+    static class CategoryViewHolder extends RecyclerView.ViewHolder {
+        CardView cardCategory;
+        ImageView ivCategoryIcon;
+        TextView tvCategoryName;
+
         public CategoryViewHolder(@NonNull View itemView) {
             super(itemView);
-            cardView = (CardView) itemView; // The root view is a CardView
-            categoryName = itemView.findViewById(R.id.categoryName);
+            cardCategory = itemView.findViewById(R.id.card_category);
+            ivCategoryIcon = itemView.findViewById(R.id.iv_category_icon);
+            tvCategoryName = itemView.findViewById(R.id.tv_category_name);
         }
     }
 } 

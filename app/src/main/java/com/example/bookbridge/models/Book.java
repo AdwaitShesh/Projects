@@ -3,40 +3,30 @@ package com.example.bookbridge.models;
 import java.io.Serializable;
 
 public class Book implements Serializable {
-    private static final long serialVersionUID = 1L;
-    
-    private String id;
+    private int id;
     private String title;
     private String author;
-    private String description;
-    private String category;
     private double price;
-    private int coverResourceId; // For now, we'll use drawable resource IDs
-    private String condition; // New, Used - Like New, Used - Good, etc.
-    private String sellerId;
+    private String description;
+    private int imageResource;
+    private boolean isWishlisted;
 
-    public Book() {
-        // Empty constructor needed for Firebase
-    }
-
-    public Book(String id, String title, String author, String description, String category, 
-                double price, int coverResourceId, String condition, String sellerId) {
+    public Book(int id, String title, String author, double price, String description, int imageResource, boolean isWishlisted) {
         this.id = id;
         this.title = title;
         this.author = author;
-        this.description = description;
-        this.category = category;
         this.price = price;
-        this.coverResourceId = coverResourceId;
-        this.condition = condition;
-        this.sellerId = sellerId;
+        this.description = description;
+        this.imageResource = imageResource;
+        this.isWishlisted = isWishlisted;
     }
 
-    public String getId() {
+    // Getters and Setters
+    public int getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -56,22 +46,6 @@ public class Book implements Serializable {
         this.author = author;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
     public double getPrice() {
         return price;
     }
@@ -80,27 +54,27 @@ public class Book implements Serializable {
         this.price = price;
     }
 
-    public int getCoverResourceId() {
-        return coverResourceId;
+    public String getDescription() {
+        return description;
     }
 
-    public void setCoverResourceId(int coverResourceId) {
-        this.coverResourceId = coverResourceId;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public String getCondition() {
-        return condition;
+    public int getImageResource() {
+        return imageResource;
     }
 
-    public void setCondition(String condition) {
-        this.condition = condition;
+    public void setImageResource(int imageResource) {
+        this.imageResource = imageResource;
     }
 
-    public String getSellerId() {
-        return sellerId;
+    public boolean isWishlisted() {
+        return isWishlisted;
     }
 
-    public void setSellerId(String sellerId) {
-        this.sellerId = sellerId;
+    public void setWishlisted(boolean wishlisted) {
+        isWishlisted = wishlisted;
     }
 } 

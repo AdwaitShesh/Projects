@@ -2,24 +2,26 @@ package com.example.bookbridge.models;
 
 public class Category {
     private String name;
-    private int iconResId;
-    private String count;
+    private int iconResource;
 
-    public Category(String name, int iconResId, String count) {
+    public Category(String name, int iconResource) {
         this.name = name;
-        this.iconResId = iconResId;
-        this.count = count;
+        this.iconResource = iconResource;
     }
 
     public String getName() {
         return name;
     }
 
-    public int getIconResId() {
-        return iconResId;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public String getCount() {
-        return count;
+    public int getIconResource() {
+        return iconResource;
+    }
+
+    public void setIconResource(int iconResource) {
+        this.iconResource = iconResource;
     }
 } 

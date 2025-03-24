@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="180dp"
+    android:viewportWidth="120"
+    android:viewportHeight="180">
+    <path
+        android:fillColor="#9C27B0"
+        android:pathData="M0,0h120v180h-120z" />
+    
+    <!-- Title -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,30h80v5h-80z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,40h60v5h-60z" />
+    
+    <!-- Neural Network Representation -->
+    <!-- Input Layer -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,70a5,5 0 1,0 10,0a5,5 0 1,0 -10,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,90a5,5 0 1,0 10,0a5,5 0 1,0 -10,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,110a5,5 0 1,0 10,0a5,5 0 1,0 -10,0" />
+    
+    <!-- Hidden Layer -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M55,60a5,5 0 1,0 10,0a5,5 0 1,0 -10,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M55,80a5,5 0 1,0 10,0a5,5 0 1,0 -10,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M55,100a5,5 0 1,0 10,0a5,5 0 1,0 -10,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M55,120a5,5 0 1,0 10,0a5,5 0 1,0 -10,0" />
+    
+    <!-- Output Layer -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,70a5,5 0 1,0 10,0a5,5 0 1,0 -10,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,90a5,5 0 1,0 10,0a5,5 0 1,0 -10,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,110a5,5 0 1,0 10,0a5,5 0 1,0 -10,0" />
+    
+    <!-- Connection Lines (not all, just representative) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,70l15,-10h1l-15,10z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,70l15,10h1l-15,-10z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,70l15,30h1l-15,-30z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,90l15,-30h1l-15,30z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,90l15,-10h1l-15,10z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,90l15,10h1l-15,-10z" />
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M65,60l15,10h1l-15,-10z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M65,80l15,-10h1l-15,10z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M65,80l15,10h1l-15,-10z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M65,100l15,-10h1l-15,10z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M65,100l15,10h1l-15,-10z" />
+    
+    <!-- Author -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,150h60v3h-60z" />
+</vector> 

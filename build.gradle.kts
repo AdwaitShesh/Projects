@@ -16,11 +16,6 @@ buildscript {
     }
 }
 
-// Configure Java home via Gradle properties if not set in environment
-if (System.getenv("JAVA_HOME") == null) {
-    System.setProperty("org.gradle.java.home", "${System.getProperty("user.home")}/.jdks/corretto-17.0.9")
-}
-
 tasks.register("clean", Delete::class) {
     delete(rootProject.buildDir)
 }

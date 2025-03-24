@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="180dp"
+    android:viewportWidth="120"
+    android:viewportHeight="180">
+    <path
+        android:fillColor="#009688"
+        android:pathData="M0,0h120v180h-120z" />
+    
+    <!-- Title -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,30h80v5h-80z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,40h60v5h-60z" />
+    
+    <!-- Database Tables -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,60h60v30h-60z" />
+    <path
+        android:fillColor="#009688"
+        android:pathData="M30,70h60v1h-60z" />
+    <path
+        android:fillColor="#009688"
+        android:pathData="M50,60v30h1v-30z" />
+    <path
+        android:fillColor="#009688"
+        android:pathData="M70,60v30h1v-30z" />
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,100h60v30h-60z" />
+    <path
+        android:fillColor="#009688"
+        android:pathData="M30,110h60v1h-60z" />
+    <path
+        android:fillColor="#009688"
+        android:pathData="M50,100v30h1v-30z" />
+    <path
+        android:fillColor="#009688"
+        android:pathData="M70,100v30h1v-30z" />
+    
+    <!-- Relation Lines -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,90v10h2v-10z" />
+    
+    <!-- Author -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,150h60v3h-60z" />
+</vector> 

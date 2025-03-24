@@ -37,10 +37,6 @@ android {
     buildFeatures {
         viewBinding = true
     }
-    
-    androidResources {
-        noCompress += listOf("xml")
-    }
 }
 
 dependencies {
@@ -52,6 +48,12 @@ dependencies {
     implementation("androidx.navigation:navigation-ui:2.7.7")
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
+    implementation("de.hdodenhof:circleimageview:3.1.0")
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    
+    // OpenStreetMap
+    implementation("org.osmdroid:osmdroid-android:6.1.17")
+    
     kapt("androidx.room:room-compiler:2.6.1")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
